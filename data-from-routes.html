@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Treaty</title>
+  <link rel="stylesheet" href="libs/bootstrap/bootstrap.css">
+  <link rel="stylesheet" href="libs/datepicker.css">
+  <link rel="stylesheet" href="libs/bootstrap-glyphicons.css">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- Libs -->
+  <script src="libs/d3.v3.min.js"></script>
+  <script src="libs/jquery-1.9.1.js"></script>
+  <script src="libs/handlebars-1.0.0.js"></script>
+  <script src="libs/ember-1.0.0.js"></script>
+  <script src="libs/ember-data-1.0.0-beta.2.js"></script>
+  <script src="libs/bootstrap-datepicker.js"></script>
+  <script src="libs/moment.min.js"></script>
+  <script src="libs/charts/GeoChart.js"></script>
+  <script src="http://d3js.org/d3.geo.projection.v0.min.js"></script>
+  <script src="http://d3js.org/queue.v1.min.js"></script>
+  <script src="http://d3js.org/topojson.v1.min.js"></script>
+
+
+  <!-- Templates -->
+  <script type="text/x-handlebars">
+    <header class="title">
+      <h1>Treaty</h1>
+      <h2>Data from routes</h2>
+    </header>
+
+    <div class="content">
+      <div id="left-panel" class="text-center">
+        <div class="loading">
+          {{ outlet loading }}
+        </div>
+        {{monthly-datepicker month=controller.controllers.monthlyReport.date action="getTreaty"}}
+      </div>
+      
+      <div id="center-panel" class="container-fluid">
+        {{outlet}}
+      </div>
+    </div>
+  </script>
+
+  <script type="text/x-handlebars" data-template-name="index">
+    <h3 class='text-center muted thin'>Select a month</h3>
+  </script>
+
+  <script type="text/x-handlebars" data-template-name="treaty">
+    <h1 class='text-center margin-bottom-large'>{{ title }}</h1>
+    
+    <div class="text-center">
+      <ul class="nav nav-pills filters margin-left">
+        {{filter-item value="date" label="Date" filter=controller.controllers.countries.filter}}
+        
+      </ul>
+    </div>
+
+    <div class="row">
+      <div class="col-lg-6 col-lg-offset-3">
+        <div class="bordered">
+
+          {{geo-chart data=controller.controllers.countries.data isLoaded=controller.controllers.countries.model.isLoaded}}
+
+        </div>
+      </div>
+    </div>
+  </script>
+
+  <script type="text/x-handlebars" data-template-name="loading">
+    <img src="img/loading.gif">
+  </script>
+
+   <!-- Components -->
+  <script type="text/x-handlebars" data-template-name="components/monthly-datepicker"></script>
+  <script type="text/x-handlebars" data-template-name="components/geo-chart"></script>
+   <script type="text/x-handlebars" data-template-name="components/filter-item">
+    <a>{{label}}</a>
+  </script>
+
+  <script>
+
+    /* Application    
+    ********************/
+    App = Ember.Application.create();
+    App.ApplicationAdapter = DS.FixtureAdapter.extend({ latency: 400 });
+
+    /* Models
+    ********************/
+    App.Treaty = DS.Model.extend({
+      date: function() {
+        return moment( this.get('id'), 'MMM-YYYY' );
+      }.property('model'),
+
+      countries: DS.hasMany('countries', { async: true })
+    });
+
+    App.Country = DS.Model.extend({
+     treaty: DS.belongsTo('treaty'),
+      name: DS.attr('string'),
+      date: DS.attr('date'),
+     
+    });
+
+
+    /* Routes
+    ********************/
+    App.Router.map(function() {
+      this.resource('treaty', { path: '/:treaty_id' });
+    });
+    App.IndexRoute = Ember.Route.extend({
+      setupController: function(controller, model) {
+        this.controllerFor('treaty').set('content', null);
+        this.controllerFor('countries').set('content', null);
+      }
+    });
+    App.LoadingRoute = Ember.Route.extend({
+      renderTemplate: function() {
+        if (this.controllerFor('application').get('currentPath')) {
+          this.render('loading', {into: 'application', outlet: 'loading'});
+        } 
+      }
+    });
+    App.TreatyRoute = Ember.Route.extend({
+      setupController: function(controller, model) {
+        var _this = this;
+
+        controller.set('model', model);
+        model.get('countries').then(function(countries) {
+          _this.controllerFor('countries').set('model', countries);
+        });
+      }
+    });
+
+
+    /* Controllers
+    ********************/
+    App.ApplicationController = Ember.Controller.extend({
+      needs: ['treaty'],
+      actions: {
+        getTreaty: function(id) {
+          this.transitionToRoute('treaty', this.get('store').find('treaty', id ));
+        }
+      }
+    });
+
+    App.TreatyController = Ember.ObjectController.extend({
+      needs: ['countries'],
+      title: function() {
+        return this.get('date').format('MMMM YYYY');
+      }.property('model')
+    });
+
+
+    App.CountriesController = Ember.ArrayController.extend({
+        filter: 'date',
+      data: function() {
+        if (!this.get('model.isLoaded')) {return;}
+        var _this = this;
+        var data = this.map(function(country) {
+          return {
+            category: country.get('name'),
+            count: country.get( _this.get('filter') ),
+          };
+        });
+
+        return data;
+      }.property('model','filter')
+    });
+
+
+    /* Components
+    ********************/
+    App.FilterItemComponent = Ember.Component.extend({
+      tagName: 'li',
+      classNameBindings: ['active'],
+
+      active: function() {
+        return this.get('filter') == this.get('value');
+      }.property('filter'),
+
+      click: function() {
+        this.set('filter', this.get('value'));
+      }
+    });
+    
+    App.BaseChartComponent = Ember.Component.extend({
+      classNames: ['chart'],
+
+      didInsertElement: function() {
+        Ember.run.once(this, 'update');
+      },
+
+      update: function() {
+        if (this.get('isLoaded')) {
+          d3.select(this.$()[0])
+            .data([ this.get('data') ])
+            .call(this.get('chart'));
+        }
+      }.observes('data')
+    });
+
+    App.GeoChartComponent = Ember.Component.extend({
+      classNames: ['chart'],
+
+      chart: GeoChart()
+ 
+        ,
+
+      didInsertElement: function() {
+        Ember.run.once(this, 'update');
+      },
+
+      update: function() {
+        if (this.get('isLoaded')) {
+          d3.select(this.$()[0])
+            .data([ this.get('data') ])
+            .call(this.get('chart'));
+        }
+      }.observes('data')
+    }); 
+
+    App.MonthlyDatepickerComponent = Ember.Component.extend({
+      classNames: ['dp'],
+
+      didInsertElement: function() {
+        var _this = this;
+        this.$().datepicker({format: 'M-yyyy',minViewMode: 'months'})
+          .on('changeDate', function(e) {
+            _this.sendAction('action', e.format());
+          });
+        
+        this.update();
+      },
+
+      update: function() {
+        if (this.get('month')) {
+          this.$().datepicker('update', this.get('month').toDate());
+        } else {
+          this.$('.month.active').removeClass('active');
+        }
+      }.observes('month')
+    }); 
+
+  </script>
+
+  <script src="libs/test-data.js"></script>  
+
+</body>
+</html>
