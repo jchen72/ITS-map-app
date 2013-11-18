@@ -1,4 +1,4 @@
 Title: World treaty map by date picker
 Framework: Ember, nodejs, mongoDB 
-Things to do : integrate data with chart, make responsive chart and connect to database  
+Things to do : in test-data.js, retrieve corresponding count of countries and country names from database 
 

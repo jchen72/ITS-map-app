@@ -1,6 +1,28 @@
 function GeoChart() {
-
-    var parseDate = d3.time.format("%Y-%m-%d").parse,
+ 
+        var GeoChart;
+        var mydata=[];
+    $(document).ready(function () {
+      $("#seedselect").change(function() {
+      mydata = [];
+        requestData($(this).val());
+    });
+  //load mydata
+  function requestData(data) {
+    $.ajax({
+      url: 'http://localhost:3000'+data,
+      type: "GET",
+      dataType: "json",
+      success: function(seed) {
+        var jsonobj = seed;
+        var obj = jQuery.parseJSON(jsonobj);
+        for(i=0;i<obj.length;i++)
+          {
+            mydata.push(parseInt(obj[i].country)); 
+          }
+        
+          //Chart
+        var parseDate = d3.time.format("%Y-%m-%d").parse,
     formatDate = d3.time.format("%x");
 
 var width = 960,
@@ -16,10 +38,10 @@ var color = d3.scale.linear()
     .range(["purple", "orange"])
     .clamp(true)
     .interpolate(d3.interpolateHcl);
-
+   
 var path = d3.geo.path()
     .projection(projection);
-
+//create SVG object
 var svg = d3.select("body").append("svg")
     .attr("width", width)
     .attr("height", height);
@@ -37,15 +59,13 @@ svg.append("use")
     .attr("class", "fill")
     .attr("xlink:href", "#sphere");
 
-queue()
-    .defer(d3.json, "world-50m.json")
-    .await(ready);
 
 function ready(error, world, treaties) {
   var treatiesById = d3.nest()
       .key(function(d) { return d.id; })
       .sortValues(function(a, b) { return a.date - b.date; })
       .map(treaties, d3.map);
+      .data(obj);
 
   var country = svg.insert("g", ".graticule")
       .attr("class", "land")
@@ -80,6 +100,11 @@ function type(d) {
 }
 
 d3.select(self.frameElement).style("height", height + "px");
+      },
 
-
-   
+            
+      
+    });
+  }
+});
+    

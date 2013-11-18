@@ -83,22 +83,7 @@
   </script>
 
   <script>
-  Csonv.separators.column = "|";
-  Csonv.separators.array  = "/";
-   var jsonobj = "libs/treaties.csv".toObjects();
-     //load mydata
-  function requestData(data) {
-    $.ajax({
-      url: 'http://localhost:3000'+data,
-      type: "GET",
-      dataType: "json",
-      success: function(seed) {
-        var jsonobj = seed;
-        var obj = jQuery.parseJSON(jsonobj);
-        for(i=0;i<obj.length;i++)
-          {
-            mydata.push(parseInt(obj[i].country)); 
-          }
+
     /* Application    
     ********************/
     App = Ember.Application.create();
@@ -107,7 +92,7 @@
     /* Models
     ********************/
     App.Treaty = DS.Model.extend({
-      id: function() {
+      date: function() {
         return moment( this.get('id'), 'MMM-YYYY' );
       }.property('model'),
 
@@ -117,7 +102,7 @@
     App.Country = DS.Model.extend({
      treaty: DS.belongsTo('treaty'),
       name: DS.attr('string'),
-      cid:   DS.attr('number'),
+      date: DS.attr('date'),
      
     });
 
@@ -263,7 +248,7 @@
 
   </script>
 
-  <script src="libs/test-data.js"></script>  
-  <script src="libs/csonv.js"></script> 
+  <script src="libs/appmongodbchart.js"></script>  
+
 </body>
 </html>

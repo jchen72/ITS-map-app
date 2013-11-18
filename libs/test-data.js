@@ -9,18 +9,37 @@ App.TestData = Ember.Object.extend({
         treaties.push({
           id: moment([year, month]).format('MMM-YYYY'),
           countries: [year+''+month+'1', year+''+month+'2', year+''+month+'3', year+''+month+'4', year+''+month+'5']
+    
         });
-
-       
-        countries.push({
+        companies.push({
+          id: year+''+month+'1',
+          cid: 1
+          name: 'Alabania',
+    
+        });
+           companies.push({
+          id: year+''+month+'2',
+          cid: 15
+          name: 'Cuba',
+    
+        });
+          companies.push({
           id: year+''+month+'4',
-          name: 'Albania',
-          date:year+''+month+'4',
+          cid: 10
+          name: 'Rusia',
+    
         });
-        countries.push({
+           companies.push({
+          id: year+''+month+'3',
+          cid: 19
+          name: 'Chili',
+    
+        });
+             companies.push({
           id: year+''+month+'5',
-          name: 'Argentina',
-          date: year+''+month+'5',
+          cid: 16
+          name: 'France',
+    
         });
       }
     }
