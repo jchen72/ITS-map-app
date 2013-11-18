@@ -7,7 +7,10 @@ function GeoChart() {
       mydata = [];
         requestData($(this).val());
     });
-  //load mydata
+     Csonv.separators.column = "|";
+     Csonv.separators.array  = "/";
+   var jsonobj = "libs/treaties.csv".toObjects();
+     //load mydata
   function requestData(data) {
     $.ajax({
       url: 'http://localhost:3000'+data,
